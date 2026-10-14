@@ -6,7 +6,7 @@ from .settings import settings
 # Production da docs o'chirish (ixtiyoriy)
 app = FastAPI(
     title="Blog API",
-    version="5.0.0",
+    version="7.0.0",
     docs_url=None if settings.is_production else "/docs",
     redoc_url=None if settings.is_production else "/redoc",
     openapi_url=None if settings.is_production else "/openapi.json",
