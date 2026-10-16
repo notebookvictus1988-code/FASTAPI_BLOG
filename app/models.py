@@ -8,7 +8,7 @@ class Post(Base):
 
     id = Column(Integer, primary_key=True, nullable=False)
     title = Column(String(255), nullable=False)
-    body = Column(Text, nullable=False)
+    content = Column(Text, nullable=False)
     published = Column(Boolean, server_default="TRUE", nullable=False)
     created_at = Column(
         TIMESTAMP(timezone=True),
