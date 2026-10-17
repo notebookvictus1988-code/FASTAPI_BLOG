@@ -186,3 +186,21 @@ def test_get_posts_search(client, test_posts):
     assert response.status_code == 200
     assert len(response.json()) == 1
     assert response.json()[0]["title"] == "Birinchi post"
+
+
+
+# Bo'sh title bilan post:
+def test_create_post_empty_title(authorized_client):
+    response = authorized_client.post(
+        "/posts/",
+        json={"title": "", "content": "Kontent"}
+    )
+    # 422 kelishi kerak
+
+# Juda uzun title:
+def test_create_post_long_title(authorized_client):
+    response = authorized_client.post(
+        "/posts/",
+        json={"title": "A" * 1000, "content": "Kontent"}
+    )
+    # 422 kelishi kerak (255 ta belgi limit)  

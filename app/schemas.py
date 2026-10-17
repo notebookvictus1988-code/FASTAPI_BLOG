@@ -2,7 +2,6 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
 
-# ─── POST SCHEMAS ─────────────────────────────
 
 class PostBase(BaseModel):
     title: str
@@ -59,3 +58,10 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     id: Optional[str] = None        
+
+
+
+
+class PasswordChangeSchema(BaseModel):
+    old_password: str
+    new_password: str

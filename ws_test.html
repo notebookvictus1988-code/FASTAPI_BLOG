@@ -1,0 +1,257 @@
+
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chat</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #eef2f7;
+            margin: 0;
+            padding: 40px 15px;
+        }
+
+        .chat-container {
+            max-width: 650px;
+            margin: auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2563eb;
+            color: white;
+            padding: 22px;
+            text-align: center;
+        }
+
+        .header h2 {
+            margin: 0 0 10px;
+        }
+
+        #status {
+            font-size: 14px;
+            color: #dbeafe;
+        }
+
+        #messages {
+            height: 350px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8fafc;
+        }
+
+        .message {
+            padding: 10px 14px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            overflow-wrap: anywhere;
+        }
+
+        .sent {
+            background: #dbeafe;
+            color: #1d4ed8;
+            text-align: right;
+        }
+
+        .received {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .system {
+            color: #64748b;
+            text-align: center;
+            font-size: 13px;
+            font-style: italic;
+            padding: 8px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            padding: 15px;
+            background: white;
+        }
+
+        #messageInput {
+            flex: 1;
+            min-width: 0;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        #messageInput:focus {
+            border-color: #2563eb;
+        }
+
+        button {
+            padding: 11px 15px;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        #sendButton {
+            background: #2563eb;
+        }
+
+        #disconnectButton {
+            background: #dc2626;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 480px) {
+            .controls {
+                flex-wrap: wrap;
+            }
+
+            #messageInput {
+                flex-basis: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="chat-container">
+        <div class="header">
+            <h2>💬 WebSocket Chat</h2>
+            <div id="status">Serverga ulanmoqda...</div>
+        </div>
+
+        <div id="messages"></div>
+
+        <div class="controls">
+            <input
+                type="text"
+                id="messageInput"
+                placeholder="Xabar yozing..."
+                autocomplete="off"
+            >
+
+            <button id="sendButton" onclick="sendMessage()" disabled>
+                Yuborish
+            </button>
+
+            <button id="disconnectButton" onclick="disconnect()">
+                Uzilish
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const room = "general";
+        const username = "djdj";
+
+        const messages = document.getElementById("messages");
+        const input = document.getElementById("messageInput");
+        const status = document.getElementById("status");
+        const sendButton = document.getElementById("sendButton");
+        const disconnectButton =
+            document.getElementById("disconnectButton");
+
+        const ws = new WebSocket(
+            `ws://127.0.0.1:8000/ws/chat/${room}/${username}`
+        );
+
+        function addMessage(text, type) {
+            const div = document.createElement("div");
+            div.className = "message " + type;
+            div.textContent = text;
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        ws.onopen = function () {
+            status.textContent = "🟢 Serverga ulandi";
+            sendButton.disabled = false;
+            addMessage("Serverga muvaffaqiyatli ulandingiz!", "system");
+        };
+
+        ws.onmessage = function (event) {
+            try {
+                const data = JSON.parse(event.data);
+
+                if (data.type === "system") {
+                    addMessage(
+                        `${data.message} | Odamlar: ${data.users_count}`,
+                        "system"
+                    );
+                } else if (data.type === "message") {
+                    const type =
+                        data.username === username ? "sent" : "received";
+
+                    addMessage(
+                        `[${data.timestamp}] ${data.username}: ${data.message}`,
+                        type
+                    );
+                } else {
+                    addMessage(event.data, "received");
+                }
+            } catch (error) {
+                addMessage(event.data, "received");
+            }
+        };
+
+        ws.onerror = function () {
+            status.textContent = "🔴 Ulanishda xato";
+            addMessage(
+                "Serverga ulanish amalga oshmadi. FastAPI ishlayotganini tekshiring.",
+                "system"
+            );
+        };
+
+        ws.onclose = function () {
+            status.textContent = "🔴 Ulanish yopildi";
+            sendButton.disabled = true;
+            disconnectButton.disabled = true;
+            addMessage("WebSocket ulanishi yopildi.", "system");
+        };
+
+        function sendMessage() {
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(message);
+                input.value = "";
+                input.focus();
+            } else {
+                addMessage("Serverga ulanmagansiz!", "system");
+            }
+        }
+
+        function disconnect() {
+            ws.close();
+        }
+
+        input.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        });
+    </script>
+
+</body>
+</html>

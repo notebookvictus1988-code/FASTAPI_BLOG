@@ -1,20 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import posts, users, auth
+from .routers import posts, users, auth, websocket  # WebSocket импортирован
 from .settings import settings
 
-# Production da docs o'chirish (ixtiyoriy)
-app = FastAPI(
-    title="Blog API",
-    version="7.0.0",
-    docs_url=None if settings.is_production else "/docs",
-    redoc_url=None if settings.is_production else "/redoc",
-    openapi_url=None if settings.is_production else "/openapi.json",
-)
+app = FastAPI(title="Blog API", version="6.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.origins_list,
+    allow_origins=["*"],  # Разрешить все источники для теста
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -23,16 +16,12 @@ app.add_middleware(
 app.include_router(posts.router)
 app.include_router(users.router)
 app.include_router(auth.router)
+app.include_router(websocket.router)  # <-- WebSocket роутер успешно добавлен!
 
 @app.get("/")
 def root():
-    return {
-        "xabar": "Blog API",
-        "version": "10.0.0",
-        "environment": settings.environment
-    }
+    return {"xabar": "Blog API v6.0 — WebSocket bilan!"}
 
-# Health check — deploy platformalar uchun
 @app.get("/health")
-def health_check():
+def health():
     return {"status": "ok"}
